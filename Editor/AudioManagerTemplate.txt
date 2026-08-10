@@ -33,6 +33,7 @@ namespace TBaltaks.FMODManagement
         private Dictionary<GlobalAudioParameter, PARAMETER_ID> globalParameterIDs = new();
 
         private bool _isDisposed = false;
+        private const string LOG_MESSAGE_PREFIX = "[FMOD Management]";
 
 
         private AudioManager()
@@ -169,45 +170,55 @@ namespace TBaltaks.FMODManagement
         }
         public int StartNewEventAttached(EventReference eventReference, GameObject emitter)
         {
-            EventInstance eventInstance = CreateEventInstance(eventReference.Path);
-            RuntimeManager.AttachInstanceToGameObject(eventInstance, emitter);
-            eventInstance.start();
-            return eventInstance.GetHashCode();
+            return StartNewEventAttached(eventReference.Path, emitter);
         }
         public int StartNewEventAttached(EventReference eventReference, GameObject emitter, Rigidbody emitterRigidbody)
         {
-            EventInstance eventInstance = CreateEventInstance(eventReference.Path);
-            RuntimeManager.AttachInstanceToGameObject(eventInstance, emitter, emitterRigidbody);
-            eventInstance.start();
-            return eventInstance.GetHashCode();
+            return StartNewEventAttached(eventReference.Path, emitter, emitterRigidbody);
         }
         public int StartNewEventAttached(EventReference eventReference, GameObject emitter, Rigidbody2D emitterRigidbody)
         {
-            EventInstance eventInstance = CreateEventInstance(eventReference.Path);
-            RuntimeManager.AttachInstanceToGameObject(eventInstance, emitter, emitterRigidbody);
-            eventInstance.start();
-            return eventInstance.GetHashCode();
+            return StartNewEventAttached(eventReference.Path, emitter, emitterRigidbody);
         }
 
 
         public void PauseEvent(int eventInstanceID)
         {
+            if (!eventInstances.ContainsKey(eventInstanceID))
+            {
+                Debug.LogWarning($"{LOG_MESSAGE_PREFIX} Tried to pause an event instance that does not exist.");
+                return;
+            }
+            
             eventInstances[eventInstanceID].setPaused(true);
         }
 
 
         public void UnpauseEvent(int eventInstanceID)
         {
+            if (!eventInstances.ContainsKey(eventInstanceID))
+            {
+                Debug.LogWarning($"{LOG_MESSAGE_PREFIX} Tried to unpause an event instance that does not exist.");
+                return;
+            }
+
             eventInstances[eventInstanceID].setPaused(false);
         }
 
 
         public void StopEvent(int eventInstanceID, bool allowFadeOut = true)
         {
+            if (!eventInstances.ContainsKey(eventInstanceID))
+            {
+                Debug.LogWarning($"{LOG_MESSAGE_PREFIX} Tried to stop an event instance that does not exist.");
+                return;
+            }
+            
             STOP_MODE stopMode = allowFadeOut ? STOP_MODE.ALLOWFADEOUT : STOP_MODE.IMMEDIATE;
             EventInstance eventInstance = eventInstances[eventInstanceID];
             eventInstance.stop(stopMode);
             eventInstance.release();
+            eventInstances.Remove(eventInstanceID);
         }
 
 
@@ -241,6 +252,12 @@ namespace TBaltaks.FMODManagement
 
         public void SetLocalParameter(int eventInstanceID, LocalAudioParameter parameter, float value, bool ignoreSeekSpeed = false)
         {
+            if (!eventInstances.ContainsKey(eventInstanceID))
+            {
+                Debug.LogWarning($"{LOG_MESSAGE_PREFIX} Tried to set {parameter} parameter on an event instance that does not exist.");
+                return;
+            }
+            
             eventInstances[eventInstanceID].getDescription(out EventDescription eventDescription);
             if (localParameterIDs[eventDescription].TryGetValue(parameter, out PARAMETER_ID parameterID))
             {
@@ -248,7 +265,7 @@ namespace TBaltaks.FMODManagement
             }
             else
             {
-                Debug.LogWarning($"[FMOD Management] Tried to set {parameter} parameter on an event that does not contain it.");
+                Debug.LogWarning($"{LOG_MESSAGE_PREFIX} Tried to set {parameter} parameter on an event that does not contain it.");
             }
         }
 
@@ -257,6 +274,12 @@ namespace TBaltaks.FMODManagement
         {
             float value = 0;
 
+            if (!eventInstances.ContainsKey(eventInstanceID))
+            {
+                Debug.LogWarning($"{LOG_MESSAGE_PREFIX} Tried to get {parameter} parameter on an event instance that does not exist.");
+                return value;
+            }
+
             eventInstances[eventInstanceID].getDescription(out EventDescription eventDescription);
             if (localParameterIDs[eventDescription].TryGetValue(parameter, out PARAMETER_ID parameterID))
             {
@@ -264,7 +287,7 @@ namespace TBaltaks.FMODManagement
             }
             else
             {
-                Debug.LogWarning($"[FMOD Management] Tried to get value for {parameter} parameter on an event that does not contain it.");
+                Debug.LogWarning($"{LOG_MESSAGE_PREFIX} Tried to get value for {parameter} parameter on an event that does not contain it.");
             }
 
             return value;
@@ -273,12 +296,24 @@ namespace TBaltaks.FMODManagement
 
         public void SetGlobalParameter(GlobalAudioParameter parameter, float value, bool ignoreSeekSpeed = false)
         {
+            if (!globalParameterIDs.ContainsKey(parameter))
+            {
+                Debug.LogWarning($"{LOG_MESSAGE_PREFIX} Tried to set {parameter} parameter that does not exist.");
+                return;
+            }
+            
             RuntimeManager.StudioSystem.setParameterByID(globalParameterIDs[parameter], value, ignoreSeekSpeed);
         }
 
 
         public float GetGlobalParameter(GlobalAudioParameter parameter)
         {
+            if (!globalParameterIDs.ContainsKey(parameter))
+            {
+                Debug.LogWarning($"{LOG_MESSAGE_PREFIX} Tried to get {parameter} parameter that does not exist.");
+                return 0;
+            }
+
             RuntimeManager.StudioSystem.getParameterByID(globalParameterIDs[parameter], out _, out float value);
             return value;
         }
