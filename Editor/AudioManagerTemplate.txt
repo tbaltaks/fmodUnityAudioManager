@@ -131,6 +131,14 @@ namespace TBaltaks.FMODManagement
             CacheLocalParameterIDs(eventDescription);
             return eventInstance;
         }
+        private EventInstance CreateEventInstance(EventReference eventReference)
+        {
+            EventInstance eventInstance = RuntimeManager.CreateInstance(eventReference);
+            eventInstances.Add(eventInstance.GetHashCode(), eventInstance);
+            eventInstance.getDescription(out EventDescription eventDescription);
+            CacheLocalParameterIDs(eventDescription);
+            return eventInstance;
+        }
 
 
         public int StartNewEvent(string eventPath)
@@ -141,7 +149,7 @@ namespace TBaltaks.FMODManagement
         }
         public int StartNewEvent(EventReference eventReference)
         {
-            EventInstance eventInstance = CreateEventInstance(eventReference.Path);
+            EventInstance eventInstance = CreateEventInstance(eventReference);
             eventInstance.start();
             return eventInstance.GetHashCode();
         }
@@ -170,15 +178,24 @@ namespace TBaltaks.FMODManagement
         }
         public int StartNewEventAttached(EventReference eventReference, GameObject emitter)
         {
-            return StartNewEventAttached(eventReference.Path, emitter);
+            EventInstance eventInstance = CreateEventInstance(eventReference);
+            RuntimeManager.AttachInstanceToGameObject(eventInstance, emitter);
+            eventInstance.start();
+            return eventInstance.GetHashCode();
         }
         public int StartNewEventAttached(EventReference eventReference, GameObject emitter, Rigidbody emitterRigidbody)
         {
-            return StartNewEventAttached(eventReference.Path, emitter, emitterRigidbody);
+            EventInstance eventInstance = CreateEventInstance(eventReference);
+            RuntimeManager.AttachInstanceToGameObject(eventInstance, emitter, emitterRigidbody);
+            eventInstance.start();
+            return eventInstance.GetHashCode();
         }
         public int StartNewEventAttached(EventReference eventReference, GameObject emitter, Rigidbody2D emitterRigidbody)
         {
-            return StartNewEventAttached(eventReference.Path, emitter, emitterRigidbody);
+            EventInstance eventInstance = CreateEventInstance(eventReference);
+            RuntimeManager.AttachInstanceToGameObject(eventInstance, emitter, emitterRigidbody);
+            eventInstance.start();
+            return eventInstance.GetHashCode();
         }
 
 
